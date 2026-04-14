@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package ci.ec.payment.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.payment.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/payment/v1;paymentv1";
+
+// ─────────────────────────────────────────
+// Payment Domain Events — topic: ci.ec.payment.events.v1
+// Subject SR2: ci.ec.payment.events.v1-value
+// ─────────────────────────────────────────
+
+message PaymentSnapshot {
+  string payment_id  = 1;
+  string request_id  = 2;
+
+  ci.ec.common.v1.CodeRef method = 10; // PAYMENT.METHOD.* (MDMV1)
+  ci.ec.common.v1.CodeRef status = 11; // PAYMENT.STATUS.* (MDMV1)
+
+  uint64 amount_xof = 20; // montant en francs CFA (XOF)
+
+  google.protobuf.Timestamp initiated_at = 30;
+  google.protobuf.Timestamp completed_at = 31;
+}
+
+message PaymentInitiated { PaymentSnapshot payment = 1; }
+message PaymentSucceeded { PaymentSnapshot payment = 1; }
+message PaymentFailed    { PaymentSnapshot payment = 1; ci.ec.common.v1.CodeRef reason = 2; }
+
+message PaymentEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    PaymentInitiated initiated = 10;
+    PaymentSucceeded succeeded = 11;
+    PaymentFailed    failed    = 12;
+  }
+}

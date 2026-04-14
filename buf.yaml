@@ -1,0 +1,17 @@
+version: v1
+name: buf.build/kaderho/akwaba
+
+deps:
+  - buf.build/googleapis/googleapis
+
+breaking:
+  use:
+    - FILE
+
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX   # nos packages utilisent déjà .v1 dans le chemin
+  ignore_only:
+    FIELD_LOWER_SNAKE_CASE: []

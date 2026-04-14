@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ci.ec.request.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.request.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/request/v1;requestv1";
+
+// ─────────────────────────────────────────
+// Request Domain Events — topic: ci.ec.request.events.v1
+// Subject SR2: ci.ec.request.events.v1-value
+// ─────────────────────────────────────────
+
+message RequestSnapshot {
+  string request_id  = 1;
+  string requester_id = 2; // person_id ou agent_id
+
+  ci.ec.common.v1.CodeRef request_type  = 3; // REQUEST.TYPE.* (MDMV1)
+  ci.ec.common.v1.CodeRef status        = 4; // REQUEST.STATUS.* (MDMV1)
+  ci.ec.common.v1.CodeRef channel       = 5; // REQUEST.CHANNEL.* (MDMV1) — WEB|COUNTER|API
+
+  string target_civil_record_id = 10;
+  string office_id              = 11;
+  string payment_id             = 12; // optionnel
+
+  google.protobuf.Timestamp submitted_at  = 20;
+  google.protobuf.Timestamp processed_at  = 21;
+}
+
+message RequestSubmitted  { RequestSnapshot request = 1; }
+message RequestAssigned   { RequestSnapshot request = 1; string assignee_id = 2; }
+message RequestProcessed  { RequestSnapshot request = 1; }
+message RequestRejected   { RequestSnapshot request = 1; ci.ec.common.v1.CodeRef reason = 2; }
+message RequestCancelled  { RequestSnapshot request = 1; ci.ec.common.v1.CodeRef reason = 2; }
+
+message RequestEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    RequestSubmitted submitted = 10;
+    RequestAssigned  assigned  = 11;
+    RequestProcessed processed = 12;
+    RequestRejected  rejected  = 13;
+    RequestCancelled cancelled = 14;
+  }
+}

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ci.ec.common.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "ci.ec.common.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/common/v1;commonv1";
+
+// EventEnvelope — métadonnées portées par chaque message Kafka.
+// SR2 (Confluent TopicNameStrategy, BACKWARD compat).
+message EventEnvelope {
+  string event_id         = 1;  // UUID v4
+  string event_type       = 2;  // ex: "ci.ec.civil_record.CivilRecordCreated"
+  string event_version    = 3;  // ex: "v1"
+  google.protobuf.Timestamp occurred_at = 4;
+  string correlation_id   = 5;  // transmis du gateway jusqu'au consumer
+  string producer_service = 6;  // ex: "civil-record-service"
+  string producer_version = 7;  // ex: "1.4.2"
+  string causation_id     = 8;  // event_id de la commande amont (optionnel)
+}

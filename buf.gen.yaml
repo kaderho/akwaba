@@ -1,0 +1,25 @@
+version: v1
+
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/kaderho/akwaba/gen/go
+  java_multiple_files: true
+  java_package_prefix: ""
+
+plugins:
+  # Go — requires protoc-gen-go
+  - plugin: buf.build/protocolbuffers/go
+    out: gen/go
+    opt:
+      - paths=source_relative
+
+  # Go gRPC — requires protoc-gen-go-grpc (optional)
+  # - plugin: buf.build/grpc/go
+  #   out: gen/go
+  #   opt:
+  #     - paths=source_relative
+
+  # Java — requires protoc-gen-java (optional)
+  # - plugin: buf.build/protocolbuffers/java
+  #   out: gen/java

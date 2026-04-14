@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ci.ec.mdm.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.mdm.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/mdm/v1;mdmv1";
+
+// ─────────────────────────────────────────
+// MDM Domain Events — topic: ci.ec.mdm.events.v1
+// Subject SR2: ci.ec.mdm.events.v1-value
+// ─────────────────────────────────────────
+
+message CodeValueSnapshot {
+  string system  = 1; // "CI-EC-MDM"
+  string code    = 2;
+  string version = 3; // ex: "2026-04"
+  string label   = 4; // label canonique (fr)
+  map<string, string> labels = 5; // labels localisés (fr, en, ...)
+  bool   active  = 6;
+  google.protobuf.Timestamp valid_from = 10;
+  google.protobuf.Timestamp valid_to   = 11;
+}
+
+message MdmVersionSnapshot {
+  string system  = 1;
+  string version = 2;
+  string status  = 3; // DRAFT | PUBLISHED | DEPRECATED
+  google.protobuf.Timestamp published_at = 10;
+  repeated CodeValueSnapshot values = 20;
+}
+
+message MdmVersionPublished { MdmVersionSnapshot version = 1; }
+message MdmVersionDeprecated { MdmVersionSnapshot version = 1; }
+message MdmCodeAdded         { CodeValueSnapshot  value   = 1; }
+message MdmCodeDeactivated   { CodeValueSnapshot  value   = 1; }
+
+message MdmEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    MdmVersionPublished  version_published  = 10;
+    MdmVersionDeprecated version_deprecated = 11;
+    MdmCodeAdded         code_added         = 12;
+    MdmCodeDeactivated   code_deactivated   = 13;
+  }
+}

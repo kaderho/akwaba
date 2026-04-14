@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package ci.ec.registry.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.registry.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/registry/v1;registryv1";
+
+// ─────────────────────────────────────────
+// Registry Domain Events — topic: ci.ec.registry.events.v1
+// Subject SR2: ci.ec.registry.events.v1-value
+// ─────────────────────────────────────────
+
+enum RegistryStatus {
+  REGISTRY_STATUS_UNSPECIFIED = 0;
+  OPEN                        = 1;
+  CLOSED                      = 2;
+  ARCHIVED                    = 3;
+}
+
+message RegistrySnapshot {
+  string registry_id      = 1;
+  string registry_office_id = 2;
+  string year             = 3;
+
+  ci.ec.common.v1.CodeRef registry_type = 4; // REGISTRY.TYPE.* (MDMV1)
+  RegistryStatus status = 5;
+
+  google.protobuf.Timestamp opened_at  = 10;
+  google.protobuf.Timestamp closed_at  = 11;
+}
+
+message RegistryOpened   { RegistrySnapshot registry = 1; }
+message RegistryClosed   { RegistrySnapshot registry = 1; }
+message RegistryArchived { RegistrySnapshot registry = 1; }
+
+message RegistryEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    RegistryOpened   opened   = 10;
+    RegistryClosed   closed   = 11;
+    RegistryArchived archived = 12;
+  }
+}
