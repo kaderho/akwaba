@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package ci.ec.access.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.access.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/access/v1;accessv1";
+
+// ─────────────────────────────────────────
+// Access Domain Events — topic: ci.ec.access.events.v1
+// Subject SR2: ci.ec.access.events.v1-value
+// ─────────────────────────────────────────
+
+message AccessDecisionSnapshot {
+  string decision_id = 1;
+  string subject_id  = 2; // agent ou citoyen
+
+  string target_type = 10; // "civil_record" | "extract" | ...
+  string target_id   = 11;
+
+  string request_id  = 12; // optionnel
+
+  bool   granted               = 20;
+  ci.ec.common.v1.CodeRef basis       = 21; // ACCESS.BASIS.* (MDMV1)
+  ci.ec.common.v1.CodeRef deny_reason = 22; // ACCESS.DENY_REASON.* si refus (MDMV1)
+
+  google.protobuf.Timestamp decided_at = 30;
+}
+
+message AccessChecked { AccessDecisionSnapshot decision = 1; }
+
+message AccessEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    AccessChecked checked = 10;
+  }
+}

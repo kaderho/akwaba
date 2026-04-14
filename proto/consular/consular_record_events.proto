@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ci.ec.consular.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/civilrecord/civil_record_events.proto";
+
+option java_package = "ci.ec.consular.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/consular/v1;consularv1";
+
+// ─────────────────────────────────────────
+// ConsularRecord Domain Events — topic: ci.ec.consular_record.events.v1
+// Subject SR2: ci.ec.consular_record.events.v1-value
+// ─────────────────────────────────────────
+
+enum ConsularRecordStatus {
+  CONSULAR_RECORD_STATUS_UNSPECIFIED = 0;
+  REGISTERED                         = 1;
+  TRANSMITTED_TO_CENTRAL             = 2;
+  INTEGRATED_BY_CENTRAL              = 3;
+}
+
+message ConsularRecordSnapshot {
+  string consular_record_id = 1;
+  string consular_post_id   = 2; // code poste consulaire
+  string country_code       = 3; // ISO-3166-1 alpha-2, ex: "FR"
+
+  ci.ec.civilrecord.v1.CivilRecordSnapshot record = 10;
+
+  ConsularRecordStatus status = 20;
+  google.protobuf.Timestamp registered_at               = 21;
+  google.protobuf.Timestamp transmitted_to_central_at   = 22;
+}
+
+message ConsularRecordRegistered  { ConsularRecordSnapshot consular_record = 1; }
+message ConsularRecordTransmitted { ConsularRecordSnapshot consular_record = 1; }
+
+message ConsularRecordEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    ConsularRecordRegistered  registered  = 10;
+    ConsularRecordTransmitted transmitted = 11;
+  }
+}

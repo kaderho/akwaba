@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package ci.ec.extract.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.extract.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/extract/v1;extractv1";
+
+// ─────────────────────────────────────────
+// ExtractIssuance Domain Events — topic: ci.ec.extract_issuance.events.v1
+// Subject SR2: ci.ec.extract_issuance.events.v1-value
+// E2 + V1 + M2 + H2 extracts — VC1 verification code
+// ─────────────────────────────────────────
+
+// Types d'extrait supportés (E2+V1+M2+H2)
+// E2 = extrait intégral, V1 = extrait avec filiation,
+// M2 = copie intégrale mariage, H2 = extrait décès
+
+message ExtractIssuanceSnapshot {
+  string issuance_id             = 1;
+  string request_id              = 2;
+  string target_civil_record_id  = 3;
+  string target_version          = 4; // version snapshot de l'acte rendu
+
+  ci.ec.common.v1.CodeRef extract_kind = 5; // EXTRACT.KIND.* — E2|V1|M2|H2 (MDMV1)
+  ci.ec.common.v1.CodeRef render_mode  = 6; // RENDER.MODE.* — PAPER|DIGITAL (MDMV1)
+  ci.ec.common.v1.CodeRef status       = 7; // EXTRACT.STATUS.* (MDMV1)
+
+  string delivered_by_office_id  = 10;
+  string delivered_to_person_id  = 11;
+
+  // VC1 — verification code (Base32 Crockford, 14 chars, HMAC-SHA256)
+  string verification_code        = 20;
+  string verification_code_format = 21; // "VERIFICATION.CODE.BASE32_CROCKFORD_V1"
+
+  google.protobuf.Timestamp issued_at   = 30;
+  google.protobuf.Timestamp expires_at  = 31;
+}
+
+message ExtractIssued      { ExtractIssuanceSnapshot issuance = 1; }
+message ExtractVerified    { ExtractIssuanceSnapshot issuance = 1; }
+message ExtractInvalidated { ExtractIssuanceSnapshot issuance = 1; ci.ec.common.v1.CodeRef reason = 2; }
+
+message ExtractIssuanceEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    ExtractIssued      issued      = 10;
+    ExtractVerified    verified    = 11;
+    ExtractInvalidated invalidated = 12;
+  }
+}

@@ -1,0 +1,453 @@
+openapi: "3.1.0"
+
+info:
+  title: CI-EC API Gateway v1
+  version: "1.0.0"
+  description: |
+    Passerelle HTTP API (API1) pour le système d'état civil ivoirien (CI-EC).
+    Pattern commande C1 : HTTP POST → 202 Accepted + correlationId.
+    CQRS strict : écriture via /commands, lecture via /query.
+  contact:
+    name: CI-EC Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.etatcivil.ci/v1
+    description: Production
+
+tags:
+  - name: commands
+    description: Commandes CQRS (écriture) — C1 (202 + correlationId)
+  - name: query
+    description: Requêtes CQRS (lecture seule)
+
+# ──────────────────────────────────────────────────────────
+# SECURITY
+# ──────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Réponse standard C1 ────────────────────────────────
+    CommandAccepted:
+      type: object
+      required: [correlationId]
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Identifiant de corrélation transmis dans les events Kafka.
+        message:
+          type: string
+          example: "Command accepted"
+
+    # ── Erreurs standard ──────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+
+    # ── CodeRef MDM (MDMV1) ───────────────────────────────
+    CodeRef:
+      type: object
+      required: [system, code]
+      properties:
+        system:
+          type: string
+          example: "CI-EC-MDM"
+        code:
+          type: string
+          example: "SEX.MALE"
+        version:
+          type: string
+          example: "2026-04"
+          description: Obligatoire MDMV1 dans les snapshots.
+
+    # ── Commands ──────────────────────────────────────────
+
+    CreateCivilRecordCommand:
+      type: object
+      required: [placeCode, recordType, eventDate, officeId, partyIds]
+      properties:
+        placeCode:
+          type: string
+          description: "Code lieu P1 (ex: CI-AB-001)"
+          example: "CI-AB-001"
+        recordType:
+          type: string
+          description: "Code MDM ex: CIVIL_RECORD.TYPE.BIRTH"
+          example: "CIVIL_RECORD.TYPE.BIRTH"
+        eventDate:
+          type: string
+          format: date
+        officeId:
+          type: string
+          format: uuid
+        partyIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        registryId:
+          type: string
+          format: uuid
+
+    AmendCivilRecordCommand:
+      type: object
+      required: [civilRecordId, amendmentReason]
+      properties:
+        civilRecordId:
+          type: string
+          format: uuid
+        amendmentReason:
+          type: string
+
+    AddMentionCommand:
+      type: object
+      required: [civilRecordId, mentionType, text]
+      properties:
+        civilRecordId:
+          type: string
+          format: uuid
+        mentionType:
+          type: string
+          example: "MENTION.TYPE.MARRIAGE"
+        referenceRecordId:
+          type: string
+          format: uuid
+        text:
+          type: string
+
+    SubmitRequestCommand:
+      type: object
+      required: [requestType, targetCivilRecordId, officeId, channel]
+      properties:
+        requestType:
+          type: string
+          example: "REQUEST.TYPE.EXTRACT_ISSUANCE"
+        targetCivilRecordId:
+          type: string
+          format: uuid
+        officeId:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          example: "REQUEST.CHANNEL.WEB"
+        paymentId:
+          type: string
+          format: uuid
+
+    IssueExtractCommand:
+      type: object
+      required: [requestId, targetCivilRecordId, extractKind, renderMode, deliveredByOfficeId, deliveredToPersonId]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        targetCivilRecordId:
+          type: string
+          format: uuid
+        extractKind:
+          type: string
+          description: "E2|V1|M2|H2"
+          example: "EXTRACT.KIND.E2"
+        renderMode:
+          type: string
+          example: "RENDER.MODE.DIGITAL"
+        deliveredByOfficeId:
+          type: string
+          format: uuid
+        deliveredToPersonId:
+          type: string
+          format: uuid
+
+    # ── Query responses ───────────────────────────────────
+
+    CivilRecordView:
+      type: object
+      properties:
+        civilRecordId:
+          type: string
+          format: uuid
+        recordType:
+          $ref: "#/components/schemas/CodeRef"
+        status:
+          $ref: "#/components/schemas/CodeRef"
+        placeCode:
+          type: string
+        officeId:
+          type: string
+          format: uuid
+        eventDate:
+          type: string
+          format: date
+        registrationDate:
+          type: string
+          format: date-time
+
+    ExtractVerifyResponse:
+      type: object
+      required: [valid]
+      properties:
+        valid:
+          type: boolean
+        issuedAt:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          description: "E2|V1|M2|H2"
+        deliveredByOfficeId:
+          type: string
+          format: uuid
+        targetCivilRecordType:
+          type: string
+          description: "Type d'acte (naissance/décès/mariage)"
+
+security:
+  - BearerAuth: []
+
+# ──────────────────────────────────────────────────────────
+# PATHS
+# ──────────────────────────────────────────────────────────
+paths:
+
+  # ── COMMANDS ──────────────────────────────────────────
+
+  /commands/civil-records:
+    post:
+      tags: [commands]
+      summary: Créer un acte d'état civil
+      operationId: createCivilRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCivilRecordCommand"
+      responses:
+        "202":
+          description: Commande acceptée (C1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandAccepted"
+        "400":
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Non authentifié
+        "403":
+          description: Non autorisé
+
+  /commands/civil-records/{civilRecordId}/amendments:
+    post:
+      tags: [commands]
+      summary: Amender un acte d'état civil
+      operationId: amendCivilRecord
+      parameters:
+        - name: civilRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmendCivilRecordCommand"
+      responses:
+        "202":
+          description: Commande acceptée (C1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /commands/civil-records/{civilRecordId}/mentions:
+    post:
+      tags: [commands]
+      summary: Ajouter une mention en marge d'un acte
+      operationId: addMention
+      parameters:
+        - name: civilRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMentionCommand"
+      responses:
+        "202":
+          description: Commande acceptée (C1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /commands/requests:
+    post:
+      tags: [commands]
+      summary: Soumettre une demande (extrait, copie, etc.)
+      operationId: submitRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitRequestCommand"
+      responses:
+        "202":
+          description: Commande acceptée (C1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /commands/extracts:
+    post:
+      tags: [commands]
+      summary: Délivrer un extrait (E2/V1/M2/H2)
+      operationId: issueExtract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueExtractCommand"
+      responses:
+        "202":
+          description: Commande acceptée (C1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── QUERY ─────────────────────────────────────────────
+
+  /query/civil-records/{civilRecordId}:
+    get:
+      tags: [query]
+      summary: Lire un acte d'état civil (read model)
+      operationId: getCivilRecord
+      parameters:
+        - name: civilRecordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Acte trouvé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CivilRecordView"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /query/verify:
+    get:
+      tags: [query]
+      summary: Vérifier un code de vérification d'extrait (VC1)
+      operationId: verifyExtract
+      description: |
+        Vérification d'un extrait par son code VC1 (Base32 Crockford, 14 chars).
+        Retourne uniquement les informations non-nominatives (privacy by design).
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9A-HJKMNP-TV-Z]{14}$"
+            example: "3F6K9D2PX7QJM8"
+      security: []  # endpoint public
+      responses:
+        "200":
+          description: Résultat de vérification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractVerifyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /query/requests/{requestId}:
+    get:
+      tags: [query]
+      summary: Lire l'état d'une demande
+      operationId: getRequest
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Demande trouvée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requestId:
+                    type: string
+                    format: uuid
+                  status:
+                    $ref: "#/components/schemas/CodeRef"
+                  submittedAt:
+                    type: string
+                    format: date-time
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

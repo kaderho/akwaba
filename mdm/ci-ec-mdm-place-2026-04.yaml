@@ -1,0 +1,130 @@
+# CI-EC MDM — Référentiel Lieux (PLACE) — Version 2026-04
+# MDM1 / MDMV1 — CodeRef.version obligatoire
+# Schéma : { system, code, version, label, labels, active, valid_from }
+# Topic Kafka : ci.ec.mdm.events.v1 | Subject SR2 : ci.ec.mdm.events.v1-value
+
+system: "CI-EC-MDM"
+codeset: "PLACE"
+version: "2026-04"
+status: PUBLISHED
+published_at: "2026-04-01T00:00:00Z"
+
+# ──────────────────────────────────────────────────────────────
+# PLACE P1 — Codes lieux pour l'état civil ivoirien
+# Format : <ISO-country>-<region>-<sequence>
+# ──────────────────────────────────────────────────────────────
+values:
+  # ── Abidjan ──────────────────────────────────────────────
+  - code: "CI-AB-001"
+    label: "Abidjan – Plateau"
+    labels:
+      fr: "Abidjan – Plateau"
+      en: "Abidjan – Plateau District"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Lagunes"
+      department: "Abidjan"
+      commune: "Plateau"
+
+  - code: "CI-AB-002"
+    label: "Abidjan – Cocody"
+    labels:
+      fr: "Abidjan – Cocody"
+      en: "Abidjan – Cocody District"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Lagunes"
+      department: "Abidjan"
+      commune: "Cocody"
+
+  - code: "CI-AB-003"
+    label: "Abidjan – Yopougon"
+    labels:
+      fr: "Abidjan – Yopougon"
+      en: "Abidjan – Yopougon District"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Lagunes"
+      department: "Abidjan"
+      commune: "Yopougon"
+
+  - code: "CI-AB-004"
+    label: "Abidjan – Abobo"
+    labels:
+      fr: "Abidjan – Abobo"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Lagunes"
+      department: "Abidjan"
+      commune: "Abobo"
+
+  # ── Bouaké ──────────────────────────────────────────────
+  - code: "CI-VB-001"
+    label: "Bouaké – Centre"
+    labels:
+      fr: "Bouaké – Centre"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Vallée du Bandama"
+      department: "Bouaké"
+      commune: "Bouaké Centre"
+
+  # ── Yamoussoukro ────────────────────────────────────────
+  - code: "CI-YM-001"
+    label: "Yamoussoukro"
+    labels:
+      fr: "Yamoussoukro"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Lacs"
+      department: "Yamoussoukro"
+
+  # ── San-Pédro ────────────────────────────────────────────
+  - code: "CI-BS-001"
+    label: "San-Pédro"
+    labels:
+      fr: "San-Pédro"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Bas-Sassandra"
+      department: "San-Pédro"
+
+  # ── Daloa ────────────────────────────────────────────────
+  - code: "CI-SB-001"
+    label: "Daloa"
+    labels:
+      fr: "Daloa"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Sassandra-Marahoué"
+      department: "Daloa"
+
+  # ── Korhogo ──────────────────────────────────────────────
+  - code: "CI-DK-001"
+    label: "Korhogo"
+    labels:
+      fr: "Korhogo"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Denguélé"
+      department: "Korhogo"
+
+  # ── Man ──────────────────────────────────────────────────
+  - code: "CI-MG-001"
+    label: "Man"
+    labels:
+      fr: "Man"
+    active: true
+    valid_from: "2026-04-01"
+    attributes:
+      region: "Montagnes"
+      department: "Man"

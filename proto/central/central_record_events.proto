@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package ci.ec.central.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/civilrecord/civil_record_events.proto";
+
+option java_package = "ci.ec.central.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/central/v1;centralv1";
+
+// ─────────────────────────────────────────
+// CentralRecord Domain Events — topic: ci.ec.central_record.events.v1
+// Subject SR2: ci.ec.central_record.events.v1-value
+// ─────────────────────────────────────────
+
+message CentralRecordSnapshot {
+  string central_record_id = 1;
+
+  // provenance (exclusifs)
+  string source_consular_record_id = 2; // optionnel
+  string source_foreign_act_id     = 3; // optionnel
+
+  ci.ec.civilrecord.v1.CivilRecordSnapshot record = 10;
+
+  google.protobuf.Timestamp integrated_at = 20;
+}
+
+message CentralRecordIntegrated { CentralRecordSnapshot central_record = 1; }
+
+message CentralRecordEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    CentralRecordIntegrated integrated = 10;
+  }
+}

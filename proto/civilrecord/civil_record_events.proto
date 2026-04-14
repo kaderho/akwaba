@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package ci.ec.civilrecord.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.civilrecord.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/civilrecord/v1;civilrecordv1";
+
+// ─────────────────────────────────────────
+// CivilRecord Domain Events — topic: ci.ec.civil_record.events.v1
+// Subject SR2: ci.ec.civil_record.events.v1-value
+// ─────────────────────────────────────────
+
+message CivilRecordSnapshot {
+  string civil_record_id  = 1;
+  string registry_id      = 2;
+  string record_number    = 3;
+
+  ci.ec.common.v1.CodeRef record_type   = 4;  // CIVIL_RECORD.TYPE.* (MDMV1)
+  ci.ec.common.v1.CodeRef status        = 5;  // CIVIL_RECORD.STATUS.* (MDMV1)
+
+  string place_code       = 6;  // P1 — code lieu (ex: "CI-AB-001")
+  string office_id        = 7;
+
+  google.protobuf.Timestamp event_date       = 10;
+  google.protobuf.Timestamp registration_date = 11;
+
+  // Parties (noms, dates) — minimisés selon les droits
+  repeated string party_ids = 20; // person_id références
+}
+
+message CivilRecordCreated     { CivilRecordSnapshot record = 1; }
+message CivilRecordAmended     { CivilRecordSnapshot record = 1; string amendment_reason = 2; }
+message CivilRecordAnnotated   { CivilRecordSnapshot record = 1; string annotation = 2; }
+message CivilRecordCancelled   { CivilRecordSnapshot record = 1; ci.ec.common.v1.CodeRef reason = 2; }
+message CivilRecordTransferred { CivilRecordSnapshot record = 1; string destination_office_id = 2; }
+
+message CivilRecordEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    CivilRecordCreated     created     = 10;
+    CivilRecordAmended     amended     = 11;
+    CivilRecordAnnotated   annotated   = 12;
+    CivilRecordCancelled   cancelled   = 13;
+    CivilRecordTransferred transferred = 14;
+  }
+}

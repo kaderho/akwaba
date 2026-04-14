@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ci.ec.person.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.person.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/person/v1;personv1";
+
+// ─────────────────────────────────────────
+// Person Domain Events — topic: ci.ec.person.events.v1
+// Subject SR2: ci.ec.person.events.v1-value
+// ─────────────────────────────────────────
+
+message PersonSnapshot {
+  string person_id    = 1;
+  string last_name    = 2;
+  string first_names  = 3;
+  google.protobuf.Timestamp birth_date = 4;
+  string birth_place  = 5; // place_code P1
+
+  ci.ec.common.v1.CodeRef sex             = 10; // SEX.* (MDMV1)
+  ci.ec.common.v1.CodeRef nationality     = 11; // NATIONALITY.* (MDMV1)
+  ci.ec.common.v1.CodeRef marital_status  = 12; // CIVIL_STATUS.* (MDMV1)
+
+  google.protobuf.Timestamp registered_at = 20;
+}
+
+message PersonRegistered { PersonSnapshot person = 1; }
+message PersonUpdated    { PersonSnapshot person = 1; }
+message PersonMerged {
+  string target_person_id = 1; // personne conservée
+  string source_person_id = 2; // personne absorbée
+}
+
+message PersonEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    PersonRegistered registered = 10;
+    PersonUpdated    updated    = 11;
+    PersonMerged     merged     = 12;
+  }
+}

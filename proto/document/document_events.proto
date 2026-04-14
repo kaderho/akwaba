@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ci.ec.document.v1;
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/event_envelope.proto";
+import "proto/common/code_types.proto";
+
+option java_package = "ci.ec.document.v1";
+option java_multiple_files = true;
+option go_package = "github.com/kaderho/akwaba/gen/go/ci/ec/document/v1;documentv1";
+
+// ─────────────────────────────────────────
+// Document Domain Events — topic: ci.ec.document.events.v1
+// Subject SR2: ci.ec.document.events.v1-value
+// ─────────────────────────────────────────
+
+message DocumentSnapshot {
+  string document_id  = 1;
+  string reference_id = 2; // entité associée (ex: civil_record_id, request_id)
+
+  ci.ec.common.v1.CodeRef document_type = 3; // DOCUMENT.TYPE.* (MDMV1)
+  ci.ec.common.v1.CodeRef status        = 4; // DOCUMENT.STATUS.* (MDMV1)
+
+  string filename           = 10;
+  string storage_uri        = 11; // URI interne (non exposée)
+  string content_hash_sha256 = 12;
+
+  google.protobuf.Timestamp uploaded_at = 20;
+  google.protobuf.Timestamp expires_at  = 21;
+}
+
+message DocumentUploaded  { DocumentSnapshot document = 1; }
+message DocumentValidated { DocumentSnapshot document = 1; }
+message DocumentRejected  { DocumentSnapshot document = 1; ci.ec.common.v1.CodeRef reason = 2; }
+message DocumentExpired   { DocumentSnapshot document = 1; }
+
+message DocumentEvent {
+  ci.ec.common.v1.EventEnvelope meta = 1;
+  oneof payload {
+    DocumentUploaded  uploaded  = 10;
+    DocumentValidated validated = 11;
+    DocumentRejected  rejected  = 12;
+    DocumentExpired   expired   = 13;
+  }
+}
